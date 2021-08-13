@@ -810,6 +810,8 @@ class IconCache:
         filename = self._findImageFile(name, theme, emblem, size)
         if not filename:
             filename = self._findImageFile('unknown.png', theme, emblem, size)
+        if not filename:
+            filename = self._findImageFile('unknown.png', theme)
 
         # load image with wx.LogNull() to stop libpng complaining about sRGB
         nologging = wx.LogNull()

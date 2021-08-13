@@ -67,6 +67,8 @@ from psychopy.experiment import components, getAllStandaloneRoutines
 from builtins import str
 from psychopy.app import pavlovia_ui
 from psychopy.projects import pavlovia
+from psychopy.app import prolific_ui
+from psychopy.projects import prolific
 
 from psychopy.scripts.psyexpCompile import generateScript
 
@@ -121,6 +123,7 @@ class BuilderFrame(wx.Frame, ThemeMixin):
         self.filename = fileName
         self.htmlPath = None
         self.project = None  # type: pavlovia.PavloviaProject
+        self.prolific_project = None  # type: prolific.ProlificProject
         self.btnHandles = {}  # stores toolbar buttons so they can be altered
         self.scriptProcess = None
         self.stdoutBuffer = None
@@ -518,6 +521,10 @@ class BuilderFrame(wx.Frame, ThemeMixin):
         # ---_onlineStudies---#000000#FFFFFF-------------------------------------------
         self.pavloviaMenu = pavlovia_ui.menu.PavloviaMenu(parent=self)
         menuBar.Append(self.pavloviaMenu, _translate("Pavlovia.org"))
+
+        # ---_prolific---#000000#FFFFFF-------------------------------------------
+        self.prolificMenu = prolific_ui.menu.ProlificMenu(parent=self)
+        menuBar.Append(self.prolificMenu, _translate("Prolific"))
 
         # ---_window---#000000#FFFFFF-----------------------------------------
         self.windowMenu = FrameSwitcher(self)
@@ -1130,6 +1137,9 @@ class BuilderFrame(wx.Frame, ThemeMixin):
             self.toolbar.EnableTool(self.bldrBtnRedo.Id, enable)
         self.editMenu.Enable(wx.ID_REDO, enable)
 
+    def loginProlific(self, event=None):
+        pass
+
     def demosUnpack(self, event=None):
         """Get a folder location from the user and unpack demos into it."""
         # choose a dir to unpack in
@@ -1402,6 +1412,72 @@ class BuilderFrame(wx.Frame, ThemeMixin):
         # TODO: update user icon on button to user avatar
         pass
 
+    def onProlificSync(self, evt=None):
+        if self._getExportPref('on sync'):
+            htmlPath = self._getHtmlPath(self.filename)
+            if htmlPath:
+                self.fileExport(htmlPath=htmlPath)
+            else:
+                return
+
+        self.enableProlificButton(['prolificSync', 'prolificRun'], False)
+        try:
+            retVal = prolific_ui.syncProject(parent=self, project=self.project)
+            prolific.knownProjects.save()  # update projects.json
+            self.gitFeedback(retVal)
+        finally:
+            self.enableProlificButton(['prolificSync', 'prolificRun'], True)
+
+    def onProlificRun(self, evt=None):
+        if self._getExportPref('on save'):
+            self.fileSave()
+            retVal = prolific_ui.syncProject(parent=self, project=self.project,
+                                             closeFrameWhenDone=False)
+            self.gitFeedback(retVal)
+        elif self._getExportPref('on sync'):
+            self.fileExport(htmlPath=self._getHtmlPath(self.filename))
+            retVal = prolific_ui.syncProject(parent=self, project=self.project,
+                                             closeFrameWhenDone=False)
+            self.gitFeedback(retVal)
+        elif self._getExportPref('manually'):
+            # Check htmlpath and projects exists
+            noHtmlFolder = not os.path.isdir(self._getHtmlPath(self.filename))
+            noProject = not bool(prolific_ui.getProject(self.filename))
+            if noHtmlFolder:
+                self.fileExport()
+            if noProject or noHtmlFolder:
+                retVal = prolific_ui.syncProject(parent=self, project=self.project,
+                                                 closeFrameWhenDone=False)
+                self.gitFeedback(retVal)
+        if self.project:
+            htmlPath = self.exp.settings.params['HTML path'].val
+            self.project.prolificStatus = 'ACTIVATED'
+            url = "https://prolific.org/run/{}/{}".format(self.project.id, htmlPath)
+            wx.LaunchDefaultBrowser(url)
+
+    def enableProlificButton(self, buttons, enable):
+        """
+        Enables or disables Prolific buttons.
+
+        Parameters
+        ----------
+        name: string, list
+            Takes single buttons 'prolificSync', 'prolificRun', 'prolificSearch', 'prolificUser',
+            or multiple buttons in string 'prolificSync, prolificRun',
+            or comma separated list of strings ['prolificSync', 'prolificRun', ...].
+        enable: bool
+            True enables and False disables the button
+        """
+        if isinstance(buttons, str):
+            buttons = buttons.split(',')
+        for button in buttons:
+            self.toolbar.EnableTool(self.btnHandles[button.strip(' ')].GetId(), enable)
+
+    def setProlificUser(self, user):
+        # TODO: update user icon on button to user avatar
+        pass
+
+
     def gitFeedback(self, val):
         """
         Set feedback color for the Pavlovia Sync toolbar button.
@@ -1446,6 +1522,20 @@ class BuilderFrame(wx.Frame, ThemeMixin):
     @project.setter
     def project(self, project):
         self.__dict__['project'] = project
+
+    @property
+    def prolific_project(self):
+        """A ProlificProject object if one is known for this experiment
+        """
+        if 'prolific_project' in self.__dict__:
+            return self.__dict__['prolific_project']
+        else:
+            return None
+
+
+    @prolific_project.setter
+    def prolific_project(self, project):
+        self.__dict__['prolific_project'] = project
 
 
 class RoutinesNotebook(aui.AuiNotebook, ThemeMixin):

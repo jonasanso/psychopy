@@ -1003,7 +1003,7 @@ class PavloviaProject(dict):
             None = logged in but no permissions
 
         """
-        if not getCurrentSession().user:
+        if not getCurrentSession().user.username:
             return -1
         if 'permissions' in self.attributes:
             # collect perms for both group and individual access

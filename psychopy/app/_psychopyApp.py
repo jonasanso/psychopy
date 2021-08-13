@@ -206,6 +206,7 @@ class PsychoPyApp(wx.App, themes.ThemeMixin):
         # indicates whether we're running for testing purposes
         self.osfSession = None
         self.pavloviaSession = None
+        self.prolificSession = None
 
         self.copiedRoutine = None
         self.copiedCompon = None
@@ -735,6 +736,8 @@ class PsychoPyApp(wx.App, themes.ThemeMixin):
         logging.debug('PsychoPyApp: Quitting...')
         self.quitting = True
         # garbage collect the projects before sys.exit
+        projects.prolific.knownUsers = None
+        projects.prolific.knownProjects = None
         projects.pavlovia.knownUsers = None
         projects.pavlovia.knownProjects = None
         # see whether any files need saving

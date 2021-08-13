@@ -24,7 +24,7 @@ from wx.lib import platebtn
 
 import psychopy
 from psychopy import logging
-from . import pavlovia_ui
+from . import pavlovia_ui, prolific_ui
 from . import icons
 from .themes import ThemeMixin
 from psychopy.localization import _translate
@@ -158,6 +158,8 @@ class PsychopyToolbar(wx.ToolBar, ThemeMixin):
         cl = frame.__class__.__name__
         pavButtons = pavlovia_ui.toolbar.PavloviaButtons(
                 frame, toolbar=self, tbSize=self.iconSize)
+        proButtons = prolific_ui.toolbar.ProlificButtons(
+                frame, toolbar=self, tbSize=self.iconSize)
         if frame.__class__.__name__ == 'BuilderFrame':
             self.addPsychopyTool(
                     name='filenew',
@@ -235,6 +237,8 @@ class PsychopyToolbar(wx.ToolBar, ThemeMixin):
                     func=self.frame.runFile)  # Run
             self.AddSeparator()  # Seperator
             pavButtons.addPavloviaTools()
+            self.AddSeparator()  # Seperator
+            proButtons.addProlificTools()
         elif frame.__class__.__name__ == 'CoderFrame':
             self.addPsychopyTool('filenew', _translate('New'), 'new',
                                  _translate("Create new experiment file"),

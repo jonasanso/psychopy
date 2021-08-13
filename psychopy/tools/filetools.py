@@ -277,11 +277,11 @@ class DictStorage(dict):
 
 class KnownProjects(DictStorage):
     def save(self, filename=None):
-        """Purge unnecessary projects (without a local root) and save"""
+        """Purge unnecessary projects (without an id) and save"""
         toPurge = []
         for projname in self:
             proj = self[projname]
-            if not proj['localRoot']:
+            if not proj['id']:
                 toPurge.append(projname)
         for projname in toPurge:
             del self[projname]

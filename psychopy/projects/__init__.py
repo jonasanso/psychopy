@@ -9,4 +9,5 @@
 """
 
 from . import pavlovia
+from . import prolific
 
